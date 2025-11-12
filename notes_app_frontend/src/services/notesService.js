@@ -24,6 +24,13 @@ export async function createNote(partial = {}) {
     updatedAt: now,
   };
   const provider = getStorageProvider();
+
+  // Provider-optimized creation if available in the future (non-breaking)
+  if (typeof provider.create === "function") {
+    const created = await provider.create(base);
+    return created || base;
+  }
+
   const list = await provider.list();
   list.unshift(base);
   await provider.saveAll(list);
@@ -36,6 +43,13 @@ export async function updateNote(id, patch) {
    * Update a note by id, persist changes, and return updated note.
    */
   const provider = getStorageProvider();
+
+  // Provider-optimized update if available in the future (non-breaking)
+  if (typeof provider.update === "function") {
+    const updated = await provider.update(id, patch);
+    if (updated) return updated;
+  }
+
   const list = await provider.list();
   const idx = list.findIndex((n) => n.id === id);
   if (idx === -1) return null;
@@ -53,6 +67,13 @@ export async function deleteNote(id) {
    * Returns true if deleted.
    */
   const provider = getStorageProvider();
+
+  // Provider-optimized delete if available in the future (non-breaking)
+  if (typeof provider.remove === "function") {
+    const ok = await provider.remove(id);
+    if (ok === true) return true;
+  }
+
   const list = await provider.list();
   const next = list.filter((n) => n.id !== id);
   await provider.saveAll(next);
