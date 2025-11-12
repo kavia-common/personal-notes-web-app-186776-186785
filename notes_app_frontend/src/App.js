@@ -1,48 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import "./theme.css";
+import AppShell from "./components/AppShell";
+import NotesList from "./components/NotesList";
+import NoteEditor from "./components/NoteEditor";
+import EmptyState from "./components/EmptyState";
+import { NotesProvider, useNotesActions, useNotesState } from "./context/NotesContext";
+import { getStorageInfo } from "./services/storageService";
+
+// Internal view that decides between EmptyState and Editor
+function MainView() {
+  const { notes, selectedId } = useNotesState();
+  const { createNote } = useNotesActions();
+
+  if (!notes.length) {
+    return <EmptyState onCreate={createNote} />;
+  }
+
+  if (!selectedId) {
+    return <EmptyState onCreate={createNote} />;
+  }
+
+  return <NoteEditor />;
+}
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
-
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  /** Root app component wiring provider, layout, and views. */
+  const StorageBadge = (
+    <div className="badge" title="Current data storage mode">
+      <span className="dot" />
+      {getStorageInfo()}
+    </div>
+  );
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <NotesProvider>
+      <AppShell headerRight={StorageBadge} sidebar={<NotesList />}>
+        <MainView />
+      </AppShell>
+    </NotesProvider>
   );
 }
 
